@@ -1,6 +1,458 @@
 "use client";
-import React, { useState, useMemo } from 'react';
-import { ChevronRight, MessageCircle, AlertCircle } from 'lucide-react';
+
+import React, { useState, useMemo, useEffect } from 'react';
+import { ChevronRight, MessageCircle } from 'lucide-react';
+
+const CSS_STYLES = `
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  html, body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    background: linear-gradient(135deg, #030712 0%, #0f172a 50%, #1a1f35 100%);
+    color: white;
+    scroll-behavior: smooth;
+  }
+
+  .diagnostic-container {
+    min-height: 100vh;
+    background: linear-gradient(to bottom right, #030712, #0f172a, #1a1f35);
+    padding: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .diagnostic-wrapper {
+    max-width: 900px;
+    width: 100%;
+  }
+
+  .header {
+    text-align: center;
+    margin-bottom: 48px;
+  }
+
+  .header h1 {
+    font-size: 36px;
+    font-weight: 700;
+    color: #fbbf24;
+    margin-bottom: 8px;
+  }
+
+  .header p {
+    color: #cbd5e1;
+    font-size: 16px;
+  }
+
+  .badge {
+    display: inline-block;
+    background-color: rgba(251, 191, 36, 0.1);
+    border: 1px solid rgba(251, 191, 36, 0.3);
+    border-radius: 8px;
+    padding: 8px 16px;
+    margin-bottom: 16px;
+    color: #fbbf24;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .progress-container {
+    margin-bottom: 32px;
+  }
+
+  .progress-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    font-size: 14px;
+  }
+
+  .progress-label {
+    color: #fbbf24;
+    font-weight: 600;
+  }
+
+  .progress-score {
+    color: #94a3b8;
+  }
+
+  .progress-score .score-value {
+    color: #fbbf24;
+    font-weight: 700;
+  }
+
+  .progress-bar {
+    width: 100%;
+    height: 8px;
+    background-color: #475569;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #fbbf24, #f59e0b);
+    border-radius: 4px;
+    transition: width 0.5s ease;
+  }
+
+  .section-card {
+    background-color: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 12px;
+    padding: 32px;
+    margin-bottom: 32px;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+
+  .section-icon {
+    font-size: 36px;
+  }
+
+  .section-title {
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+
+  .section-subtitle {
+    color: #94a3b8;
+    font-size: 14px;
+  }
+
+  .questions-container {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+  }
+
+  .question-group {
+    border-top: 1px solid #475569;
+    padding-top: 32px;
+  }
+
+  .question-group:first-child {
+    border-top: none;
+    padding-top: 0;
+  }
+
+  .question-text {
+    color: #e2e8f0;
+    font-weight: 600;
+    margin-bottom: 16px;
+    font-size: 18px;
+  }
+
+  .options-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .option-label {
+    display: flex;
+    align-items: center;
+    padding: 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s;
+    background-color: #334155;
+    border: 2px solid #475569;
+  }
+
+  .option-label:hover {
+    background-color: #475569;
+  }
+
+  .option-label.selected {
+    background-color: rgba(251, 191, 36, 0.2);
+    border-color: #fbbf24;
+    box-shadow: 0 0 8px rgba(251, 191, 36, 0.2);
+  }
+
+  .option-label input[type="radio"] {
+    width: 20px;
+    height: 20px;
+    margin-right: 16px;
+    cursor: pointer;
+    accent-color: #fbbf24;
+  }
+
+  .option-label span {
+    color: #e2e8f0;
+    flex: 1;
+  }
+
+  .buttons-container {
+    display: flex;
+    gap: 16px;
+    margin-top: 32px;
+  }
+
+  .btn {
+    flex: 1;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    border: none;
+    font-size: 16px;
+  }
+
+  .btn-secondary {
+    background-color: transparent;
+    border: 2px solid #475569;
+    color: #e2e8f0;
+  }
+
+  .btn-secondary:hover:not(:disabled) {
+    background-color: #475569;
+  }
+
+  .btn-secondary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .btn-primary {
+    background-color: #fbbf24;
+    color: #1f2937;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .btn-primary:hover {
+    background-color: #f59e0b;
+  }
+
+  .footer {
+    text-align: center;
+    color: #94a3b8;
+    font-size: 12px;
+    margin-top: 32px;
+  }
+
+  .results-container {
+    min-height: 100vh;
+    background: linear-gradient(to bottom right, #030712, #0f172a, #1a1f35);
+    color: white;
+    padding: 24px;
+  }
+
+  .results-wrapper {
+    max-width: 800px;
+    margin: 0 auto;
+    padding-top: 32px;
+  }
+
+  .results-header {
+    text-align: center;
+    margin-bottom: 48px;
+  }
+
+  .results-header h1 {
+    font-size: 32px;
+    font-weight: 700;
+    color: #fbbf24;
+    margin-bottom: 8px;
+  }
+
+  .risk-score {
+    border: 2px solid;
+    border-radius: 12px;
+    padding: 32px;
+    margin-bottom: 32px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+  }
+
+  .risk-score.low {
+    background-color: rgba(34, 197, 94, 0.1);
+    border-color: rgba(34, 197, 94, 0.3);
+  }
+
+  .risk-score.medium {
+    background-color: rgba(251, 191, 36, 0.1);
+    border-color: rgba(251, 191, 36, 0.3);
+  }
+
+  .risk-score.high {
+    background-color: rgba(239, 68, 68, 0.1);
+    border-color: rgba(239, 68, 68, 0.3);
+  }
+
+  .risk-score.critical {
+    background-color: rgba(239, 68, 68, 0.2);
+    border-color: rgba(239, 68, 68, 0.5);
+  }
+
+  .risk-text h2 {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+
+  .risk-text p {
+    font-size: 12px;
+    margin-bottom: 8px;
+    opacity: 0.9;
+  }
+
+  .risk-icon {
+    font-size: 48px;
+    flex-shrink: 0;
+    margin-left: 16px;
+  }
+
+  .breakdown-card {
+    background-color: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+  }
+
+  .breakdown-card h3 {
+    color: #fbbf24;
+    font-weight: 700;
+    margin-bottom: 16px;
+  }
+
+  .breakdown-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #475569;
+  }
+
+  .breakdown-item:last-child {
+    border-bottom: none;
+  }
+
+  .breakdown-label {
+    color: #e2e8f0;
+    flex: 1;
+  }
+
+  .breakdown-score {
+    color: #fbbf24;
+    font-weight: 700;
+  }
+
+  .company-info {
+    background-color: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+  }
+
+  .company-info h3 {
+    color: #fbbf24;
+    font-weight: 700;
+    margin-bottom: 16px;
+  }
+
+  .company-item {
+    color: #cbd5e1;
+    margin-bottom: 8px;
+    font-size: 14px;
+  }
+
+  .contact-form {
+    background-color: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+  }
+
+  .contact-form h3 {
+    color: #fbbf24;
+    font-weight: 700;
+    margin-bottom: 16px;
+  }
+
+  .form-input {
+    width: 100%;
+    background-color: #334155;
+    border: 1px solid #475569;
+    color: white;
+    padding: 12px 16px;
+    margin-bottom: 12px;
+    border-radius: 8px;
+    font-size: 14px;
+  }
+
+  .form-input:focus {
+    outline: none;
+    border-color: #fbbf24;
+    box-shadow: 0 0 8px rgba(251, 191, 36, 0.2);
+  }
+
+  .form-input::placeholder {
+    color: #94a3b8;
+  }
+
+  .btn-whatsapp {
+    width: 100%;
+    background: linear-gradient(90deg, #22c55e, #16a34a);
+    color: white;
+    padding: 16px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    border: none;
+  }
+
+  .btn-whatsapp:hover {
+    transform: scale(1.02);
+    box-shadow: 0 8px 16px rgba(34, 197, 94, 0.3);
+  }
+
+  .cta-footer {
+    background: linear-gradient(90deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.8));
+    border: 1px solid rgba(251, 191, 36, 0.3);
+    border-radius: 12px;
+    padding: 24px;
+    text-align: center;
+  }
+
+  .cta-footer p {
+    color: #cbd5e1;
+    margin-bottom: 8px;
+    font-size: 14px;
+  }
+
+  .cta-footer .brand {
+    color: #fbbf24;
+    font-weight: 600;
+    font-size: 14px;
+  }
+`;
 
 export default function DiagnosticForm() {
   const [currentSection, setCurrentSection] = useState(0);
@@ -14,6 +466,24 @@ export default function DiagnosticForm() {
     tamaño: '',
     rubro: ''
   });
+
+  // Inyectar estilos en el DOM
+  useEffect(() => {
+    const styleElement = document.createElement('style');
+    styleElement.textContent = CSS_STYLES;
+    document.head.appendChild(styleElement);
+
+    // También aplicar al body directamente
+    document.body.style.margin = '0';
+    document.body.style.padding = '0';
+    document.body.style.background = 'linear-gradient(135deg, #030712 0%, #0f172a 50%, #1a1f35 100%)';
+    document.body.style.color = 'white';
+    document.body.style.fontFamily = "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif";
+
+    return () => {
+      document.head.removeChild(styleElement);
+    };
+  }, []);
 
   const sections = [
     {
@@ -282,30 +752,22 @@ export default function DiagnosticForm() {
   const getRiskLevel = (score) => {
     if (score <= 5) return { 
       level: '🟢 RIESGO BAJO', 
-      color: 'bg-green-50 border-green-200', 
-      textColor: 'text-green-700',
-      icon: '✅',
+      class: 'low',
       recommendation: 'Tu empresa tiene buena base en protección de datos. Solo mejoras menores necesarias.' 
     };
     if (score <= 12) return { 
       level: '🟡 RIESGO MODERADO', 
-      color: 'bg-amber-50 border-amber-200', 
-      textColor: 'text-amber-700',
-      icon: '⚠️',
+      class: 'medium',
       recommendation: 'Hay gaps importantes en políticas y documentación que requieren atención.' 
     };
     if (score <= 25) return { 
       level: '🔴 RIESGO ALTO', 
-      color: 'bg-red-50 border-red-200', 
-      textColor: 'text-red-700',
-      icon: '🚨',
+      class: 'high',
       recommendation: 'Tu empresa tiene exposición significativa a incumplimientos.' 
     };
     return { 
       level: '🔴🔴 RIESGO CRÍTICO', 
-      color: 'bg-red-100 border-red-300', 
-      textColor: 'text-red-800',
-      icon: '⛔',
+      class: 'critical',
       recommendation: 'Situación compleja que requiere intervención especializada y estructurada.' 
     };
   };
@@ -339,7 +801,6 @@ Me gustaría conocer más sobre cómo optimizar mi cumplimiento con la ley. ¿Po
       [questionId]: option,
     }));
 
-    // Guardar información de tamaño y rubro
     if (questionId === 'q18_tamaño') {
       setContactData(prev => ({ ...prev, tamaño: option.label }));
     }
@@ -359,127 +820,107 @@ Me gustaría conocer más sobre cómo optimizar mi cumplimiento con la ley. ¿Po
 
   if (showResults) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 text-white p-6">
-        <div className="max-w-2xl mx-auto">
-          {/* Header */}
-          <div className="text-center mb-12 pt-8">
-            <h1 className="text-4xl font-bold text-amber-400 mb-2">
-              Tu Diagnóstico está Listo
-            </h1>
-            <p className="text-slate-300">Protección de Datos Personales - Ley 21.719</p>
+      <div className="results-container">
+        <div className="results-wrapper">
+          <div className="results-header">
+            <h1>Tu Diagnóstico está Listo</h1>
+            <p style={{ color: '#cbd5e1' }}>Protección de Datos Personales - Ley 21.719</p>
           </div>
 
-          {/* Risk Score */}
-          <div className={`border-2 rounded-lg p-8 mb-8 ${risk.color}`}>
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h2 className={`text-3xl font-bold ${risk.textColor}`}>{risk.level}</h2>
-                <p className={`${risk.textColor} text-sm mt-1`}>Score: {calculateScore}/51 puntos</p>
-              </div>
-              <div className="text-6xl">{risk.icon}</div>
+          <div className={`risk-score ${risk.class}`}>
+            <div className="risk-text">
+              <h2>{risk.level}</h2>
+              <p>Score: {calculateScore}/51 puntos</p>
             </div>
-            <p className={`${risk.textColor} text-base`}>{risk.recommendation}</p>
+            <div className="risk-icon">{risk.class === 'low' ? '✅' : risk.class === 'medium' ? '⚠️' : risk.class === 'high' ? '🚨' : '⛔'}</div>
           </div>
 
-          {/* Breakdown by Section */}
-          <div className="bg-slate-800 rounded-lg p-6 mb-8 border border-slate-700">
-            <h3 className="text-xl font-bold text-amber-400 mb-4">Riesgos por Área</h3>
-            <div className="space-y-3">
-              {sections.slice(0, 7).map((sec, idx) => {
-                const secQuestions = sec.questions;
-                let secScore = 0;
-                secQuestions.forEach((q) => {
-                  if (responses[q.id]) {
-                    secScore += responses[q.id].weight;
-                  }
-                });
-                return (
-                  <div key={idx} className="flex justify-between items-center pb-3 border-b border-slate-700 last:border-b-0">
-                    <span className="text-slate-100">
-                      <span className="text-xl mr-2">{sec.icon}</span>
-                      <span className="font-semibold">{sec.title}</span>
-                    </span>
-                    <span className="text-amber-400 font-bold">{secScore} pts</span>
-                  </div>
-                );
-              })}
-            </div>
+          <p style={{ color: '#cbd5e1', marginBottom: '32px', lineHeight: '1.6' }}>{risk.recommendation}</p>
+
+          <div className="breakdown-card">
+            <h3>Riesgos por Área</h3>
+            {sections.slice(0, 7).map((sec, idx) => {
+              const secQuestions = sec.questions;
+              let secScore = 0;
+              secQuestions.forEach((q) => {
+                if (responses[q.id]) {
+                  secScore += responses[q.id].weight;
+                }
+              });
+              return (
+                <div key={idx} className="breakdown-item">
+                  <span className="breakdown-label">
+                    <span style={{ marginRight: '8px' }}>{sec.icon}</span>
+                    {sec.title}
+                  </span>
+                  <span className="breakdown-score">{secScore} pts</span>
+                </div>
+              );
+            })}
           </div>
 
-          {/* Información de Empresa */}
-          <div className="bg-slate-800 rounded-lg p-6 mb-8 border border-slate-700">
-            <h3 className="text-lg font-bold text-amber-400 mb-4">Información de tu Empresa</h3>
+          <div className="company-info">
+            <h3>Información de tu Empresa</h3>
             {contactData.tamaño && (
-              <p className="text-slate-300 text-sm mb-2">
-                <span className="text-amber-400 font-semibold">Tamaño:</span> {contactData.tamaño}
-              </p>
+              <div className="company-item">
+                <strong style={{ color: '#fbbf24' }}>Tamaño:</strong> {contactData.tamaño}
+              </div>
             )}
             {contactData.rubro && (
-              <p className="text-slate-300 text-sm">
-                <span className="text-amber-400 font-semibold">Rubro:</span> {contactData.rubro}
-              </p>
+              <div className="company-item">
+                <strong style={{ color: '#fbbf24' }}>Rubro:</strong> {contactData.rubro}
+              </div>
             )}
           </div>
 
-          {/* Datos de Contacto (Capturar) */}
-          <div className="bg-slate-800 rounded-lg p-6 mb-8 border border-slate-700">
-            <h3 className="text-lg font-bold text-amber-400 mb-4">Tu Información de Contacto</h3>
-            <form className="space-y-3">
-              <input
-                type="text"
-                placeholder="Tu nombre"
-                value={contactData.nombre}
-                onChange={(e) => setContactData({ ...contactData, nombre: e.target.value })}
-                className="w-full bg-slate-700 border border-slate-600 text-white placeholder-slate-400 px-4 py-2 rounded-lg focus:outline-none focus:border-amber-400 text-sm"
-              />
-              <input
-                type="email"
-                placeholder="Tu email"
-                value={contactData.email}
-                onChange={(e) => setContactData({ ...contactData, email: e.target.value })}
-                className="w-full bg-slate-700 border border-slate-600 text-white placeholder-slate-400 px-4 py-2 rounded-lg focus:outline-none focus:border-amber-400 text-sm"
-              />
-              <input
-                type="text"
-                placeholder="Nombre de tu empresa"
-                value={contactData.empresa}
-                onChange={(e) => setContactData({ ...contactData, empresa: e.target.value })}
-                className="w-full bg-slate-700 border border-slate-600 text-white placeholder-slate-400 px-4 py-2 rounded-lg focus:outline-none focus:border-amber-400 text-sm"
-              />
-              <input
-                type="tel"
-                placeholder="Teléfono (opcional)"
-                value={contactData.telefono}
-                onChange={(e) => setContactData({ ...contactData, telefono: e.target.value })}
-                className="w-full bg-slate-700 border border-slate-600 text-white placeholder-slate-400 px-4 py-2 rounded-lg focus:outline-none focus:border-amber-400 text-sm"
-              />
-            </form>
+          <div className="contact-form">
+            <h3>Tu Información de Contacto</h3>
+            <input
+              type="text"
+              placeholder="Tu nombre"
+              value={contactData.nombre}
+              onChange={(e) => setContactData({ ...contactData, nombre: e.target.value })}
+              className="form-input"
+            />
+            <input
+              type="email"
+              placeholder="Tu email"
+              value={contactData.email}
+              onChange={(e) => setContactData({ ...contactData, email: e.target.value })}
+              className="form-input"
+            />
+            <input
+              type="text"
+              placeholder="Nombre de tu empresa"
+              value={contactData.empresa}
+              onChange={(e) => setContactData({ ...contactData, empresa: e.target.value })}
+              className="form-input"
+            />
+            <input
+              type="tel"
+              placeholder="Teléfono (opcional)"
+              value={contactData.telefono}
+              onChange={(e) => setContactData({ ...contactData, telefono: e.target.value })}
+              className="form-input"
+            />
           </div>
 
-          {/* WhatsApp Button - DESTACADO */}
-          <button
-            onClick={handleWhatsApp}
-            className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold py-4 rounded-lg transition-all transform hover:scale-105 mb-4 flex items-center justify-center gap-3 text-lg shadow-lg"
-          >
-            <MessageCircle size={28} />
+          <button onClick={handleWhatsApp} className="btn-whatsapp">
+            <MessageCircle size={24} />
             Contactar por WhatsApp
           </button>
 
-          {/* Footer CTA */}
-          <div className="bg-gradient-to-r from-slate-800 to-slate-700 rounded-lg p-6 border border-amber-400/30 text-center">
-            <p className="text-slate-300 text-sm mb-3">
-              ¿Prefieres que te contactemos de otra forma?
-            </p>
-            <p className="text-amber-400 font-semibold text-sm">
+          <div className="cta-footer">
+            <p>¿Prefieres que te contactemos de otra forma?</p>
+            <div className="brand">
               Axis Continuity<br />
               Consultoría Especializada en Cumplimiento & Riesgos
-            </p>
+            </div>
           </div>
 
-          {/* Footer */}
-          <div className="text-center text-slate-400 text-xs mt-8">
+          <div className="footer">
             <p>Ley Nº 21.719 | Vigencia: 1 de diciembre de 2026</p>
-            <p className="mt-2">© 2026 Axis Continuity - Todos los derechos reservados</p>
+            <p style={{ marginTop: '8px' }}>© 2026 Axis Continuity - Todos los derechos reservados</p>
           </div>
         </div>
       </div>
@@ -487,64 +928,42 @@ Me gustaría conocer más sobre cómo optimizar mi cumplimiento con la ley. ¿Po
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 text-white p-6">
-      <div className="max-w-3xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <div className="mb-6">
-            <div className="inline-block bg-amber-400/10 border border-amber-400/30 rounded-lg px-4 py-2 mb-4">
-              <span className="text-amber-400 text-sm font-bold">LEY 21.719</span>
-            </div>
-          </div>
-          <h1 className="text-4xl font-bold text-amber-400 mb-2">
-            Diagnóstico de Riesgo
-          </h1>
-          <p className="text-slate-300">Protección de Datos Personales - 5 minutos</p>
+    <div className="diagnostic-container">
+      <div className="diagnostic-wrapper">
+        <div className="header">
+          <div className="badge">LEY 21.719</div>
+          <h1>Diagnóstico de Riesgo</h1>
+          <p>Protección de Datos Personales - 5 minutos</p>
         </div>
 
-        {/* Progress Bar */}
-        <div className="mb-8">
-          <div className="flex justify-between items-center mb-3">
-            <span className="text-sm font-semibold text-amber-400">
-              {currentSection + 1} de {sections.length}
-            </span>
-            <span className="text-sm text-slate-400">
-              Score: <span className="text-amber-400 font-bold">{calculateScore}</span> pts
-            </span>
+        <div className="progress-container">
+          <div className="progress-info">
+            <span className="progress-label">{currentSection + 1} de {sections.length}</span>
+            <span className="progress-score">Score: <span className="score-value">{calculateScore}</span> pts</span>
           </div>
-          <div className="w-full bg-slate-700 rounded-full h-2">
-            <div
-              className="bg-gradient-to-r from-amber-400 to-amber-500 h-2 rounded-full transition-all duration-500"
-              style={{ width: `${progress}%` }}
-            />
+          <div className="progress-bar">
+            <div className="progress-fill" style={{ width: `${progress}%` }}></div>
           </div>
         </div>
 
-        {/* Section Card */}
-        <div className="bg-slate-800 border border-slate-700 rounded-lg p-8 mb-8">
-          {/* Section Title */}
-          <div className="flex items-center gap-4 mb-8">
-            <span className="text-4xl">{section.icon}</span>
+        <div className="section-card">
+          <div className="section-header">
+            <span className="section-icon">{section.icon}</span>
             <div>
-              <h2 className="text-3xl font-bold">{section.title}</h2>
-              <p className="text-slate-400 text-sm">{section.subtitle}</p>
+              <h2 className="section-title">{section.title}</h2>
+              <p className="section-subtitle">{section.subtitle}</p>
             </div>
           </div>
 
-          {/* Questions */}
-          <div className="space-y-8">
+          <div className="questions-container">
             {section.questions.map((question) => (
-              <div key={question.id} className="border-t border-slate-700 pt-8 first:border-t-0 first:pt-0">
-                <p className="text-slate-100 font-semibold mb-4 text-lg">{question.text}</p>
-                <div className="space-y-3">
+              <div key={question.id} className="question-group">
+                <p className="question-text">{question.text}</p>
+                <div className="options-container">
                   {question.options.map((option, idx) => (
                     <label
                       key={idx}
-                      className={`flex items-center p-4 rounded-lg cursor-pointer transition-all ${
-                        responses[question.id]?.label === option.label
-                          ? 'bg-amber-400/20 border-2 border-amber-400 shadow-lg shadow-amber-400/20'
-                          : 'bg-slate-700 hover:bg-slate-600 border-2 border-slate-600'
-                      }`}
+                      className={`option-label ${responses[question.id]?.label === option.label ? 'selected' : ''}`}
                     >
                       <input
                         type="radio"
@@ -552,9 +971,8 @@ Me gustaría conocer más sobre cómo optimizar mi cumplimiento con la ley. ¿Po
                         value={option.label}
                         checked={responses[question.id]?.label === option.label}
                         onChange={() => handleAnswerSelect(question.id, option)}
-                        className="w-5 h-5 cursor-pointer accent-amber-400"
                       />
-                      <span className="ml-4 text-slate-100">{option.label}</span>
+                      <span>{option.label}</span>
                     </label>
                   ))}
                 </div>
@@ -563,28 +981,24 @@ Me gustaría conocer más sobre cómo optimizar mi cumplimiento con la ley. ¿Po
           </div>
         </div>
 
-        {/* Navigation Buttons */}
-        <div className="flex gap-4">
+        <div className="buttons-container">
           <button
             onClick={() => setCurrentSection(Math.max(0, currentSection - 1))}
             disabled={currentSection === 0}
-            className="flex-1 px-6 py-3 rounded-lg border-2 border-slate-600 text-slate-100 font-semibold hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="btn btn-secondary"
           >
             Anterior
           </button>
 
           {currentSection === sections.length - 1 ? (
-            <button
-              onClick={() => setShowResults(true)}
-              className="flex-1 px-6 py-3 bg-amber-400 text-slate-900 font-bold rounded-lg hover:bg-amber-300 transition-colors flex items-center justify-center gap-2 text-lg"
-            >
+            <button onClick={() => setShowResults(true)} className="btn btn-primary">
               Ver Resultados
               <ChevronRight size={20} />
             </button>
           ) : (
             <button
               onClick={() => setCurrentSection(Math.min(sections.length - 1, currentSection + 1))}
-              className="flex-1 px-6 py-3 bg-amber-400 text-slate-900 font-bold rounded-lg hover:bg-amber-300 transition-colors flex items-center justify-center gap-2 text-lg"
+              className="btn btn-primary"
             >
               Siguiente
               <ChevronRight size={20} />
@@ -592,10 +1006,9 @@ Me gustaría conocer más sobre cómo optimizar mi cumplimiento con la ley. ¿Po
           )}
         </div>
 
-        {/* Footer */}
-        <div className="text-center text-slate-400 text-xs mt-8">
+        <div className="footer">
           <p>Ley Nº 21.719 | Entrada en vigor: 1 de diciembre de 2026</p>
-          <p className="mt-2">© 2026 Axis Continuity</p>
+          <p style={{ marginTop: '8px' }}>© 2026 Axis Continuity</p>
         </div>
       </div>
     </div>
