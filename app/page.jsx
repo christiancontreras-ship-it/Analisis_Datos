@@ -1032,7 +1032,7 @@ Me gustaría conocer más sobre cómo optimizar mi cumplimiento con la ley. ¿Po
                     • Almacenamiento: Servidores de Vercel y HubSpot CRM (ubicados en USA)<br/>
                     • Retención: Máximo 24 meses desde último contacto<br/>
                     • Transferencia: No se compartirá sin autorización previa<br/>
-                    • Derechos: Acceso, rectificación, eliminación mediante mail a hola@axiscontinuity.cl<br/>
+                    • Derechos: Acceso, rectificación, eliminación mediante mail a contacto@axiscontinuity.cl<br/>
                     • Tiempo de respuesta: 20 días hábiles
                   </div>
                 </div>
@@ -1058,7 +1058,7 @@ Me gustaría conocer más sobre cómo optimizar mi cumplimiento con la ley. ¿Po
             <h3>📋 Responsable de Tratamiento</h3>
             <p style={{ color: '#cbd5e1', fontSize: '13px', marginBottom: '8px' }}>
               <strong>Empresa:</strong> Axis Continuity SpA<br/>
-              <strong>Email:</strong> hola@axiscontinuity.cl<br/>
+              <strong>Email:</strong> contacto@axiscontinuity.cl<br/>
               <strong>Política de Privacidad:</strong> axiscontinuity.cl/privacidad<br/>
               <strong>Reclamos:</strong> Agencia de Protección de Datos (www.protecciondatos.gob.cl)
             </p>
@@ -1217,7 +1217,7 @@ Me gustaría conocer más sobre cómo optimizar mi cumplimiento con la ley. ¿Po
             <div className="brand">
               Axis Continuity<br />
               Consultoría Especializada en Cumplimiento & Riesgos<br/>
-              hola@axiscontinuity.cl
+              contacto@axiscontinuity.cl
             </div>
           </div>
 
